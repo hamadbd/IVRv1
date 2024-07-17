@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Recorded Audios</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Audio</th>
+            <th>Created At</th>
+            <th>User</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for recording in recordings %}
+        <tr>
+            <td>
+                <audio controls>
+                    <source src="{{ recording.audio_file.url }}" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+            </td>
+            <td>{{ recording.created_at }}</td>
+            <td>{{ recording.user.id }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

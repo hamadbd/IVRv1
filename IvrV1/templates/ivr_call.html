@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Authenticate</h2>
+<h2>IVR Call</h2>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Authenticate</button>
+    <button type="submit">Start IVR Call</button>
 </form>
 {% if form.errors %}
     <ul>
