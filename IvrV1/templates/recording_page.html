@@ -8,7 +8,8 @@
 <div id="controls">
     <button id="recordButton"><img src="{% static 'mic.png' %}" alt="Record"></button>
     <button id="pauseButton" disabled><img src="{% static 'pause.png' %}" alt="Pause"></button>
-    <button id="reRecordButton" disabled><img src="{% static 're-record.png' %}" alt="Re-record"></button>
+    <button id="playButton" disabled><img src="{% static 'play.png' %}" alt="Play"></button>
+    <button id="reRecordButton"><img src="{% static 're-record.png' %}" alt="Re-record"></button>
 </div>
 
 <audio id="audioPlayback" controls></audio>
@@ -19,74 +20,116 @@
     <button type="submit">Save Recording</button>
 </form>
 
-<!-- Include Recorder.js from CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/recorder.js/4.14.2/recorder.min.js"></script>
 <script>
     let gumStream; // Stream from getUserMedia()
-    let rec; // Recorder.js object
-    let input; // MediaStreamAudioSourceNode we'll be recording
+    let mediaRecorder; // MediaRecorder object
+    let audioChunks = [];
+    let timeoutID; // Timeout ID to stop recording after 60 seconds
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioContext; // Audio context to help us record
 
     const recordButton = document.getElementById("recordButton");
     const pauseButton = document.getElementById("pauseButton");
+    const playButton = document.getElementById("playButton");
     const reRecordButton = document.getElementById("reRecordButton");
     const audioPlayback = document.getElementById("audioPlayback");
     const audioFileInput = document.getElementById("audioFileInput");
 
+    // Event listeners for buttons
     recordButton.addEventListener("click", startRecording);
     pauseButton.addEventListener("click", pauseRecording);
+    playButton.addEventListener("click", playRecording);
     reRecordButton.addEventListener("click", reRecord);
 
-    function startRecording() {
+    // Start recording
+    async function startRecording() {
         console.log("Record button clicked");
 
         const constraints = { audio: true, video: false };
 
-        recordButton.disabled = true;
-        pauseButton.disabled = false;
-        reRecordButton.disabled = false;
+        try {
+            // Disable/Enable buttons appropriately
+            recordButton.disabled = true;
+            pauseButton.disabled = false;
+            playButton.disabled = true;
+            reRecordButton.disabled = true;
 
-        navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
-            audioContext = new AudioContext();
+            // Get user media
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
             gumStream = stream;
+            audioContext = new AudioContext();
             input = audioContext.createMediaStreamSource(stream);
 
-            rec = new Recorder(input, { numChannels: 1 });
-            rec.record();
+            // Create MediaRecorder and start recording
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
 
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                createDownloadLink(audioBlob);
+                audioChunks = [];
+            };
+
+            mediaRecorder.start();
             console.log("Recording started");
-        }).catch(function(err) {
+
+            // Stop recording after 60 seconds
+            timeoutID = setTimeout(stopRecording, 60000);
+        } catch (err) {
             console.error("Error accessing audio stream:", err);
+            // Reset button states on error
             recordButton.disabled = false;
             pauseButton.disabled = true;
-            reRecordButton.disabled = true;
-        });
-    }
-
-    function pauseRecording() {
-        console.log("Pause button clicked");
-
-        if (rec.recording) {
-            rec.stop();
-            gumStream.getAudioTracks()[0].stop();
-            rec.exportWAV(createDownloadLink);
-
-            console.log("Recording paused");
-        } else {
-            rec.record();
-            console.log("Recording resumed");
+            playButton.disabled = true;
+            reRecordButton.disabled = false;
         }
     }
 
+    // Stop recording
+    function stopRecording() {
+        console.log("Stopping recording");
+
+        mediaRecorder.stop();
+        gumStream.getAudioTracks()[0].stop();
+
+        // Reset button states
+        recordButton.disabled = false;
+        pauseButton.disabled = true;
+        playButton.disabled = false;
+        reRecordButton.disabled = false;
+
+        clearTimeout(timeoutID);
+    }
+
+    // Pause recording
+    function pauseRecording() {
+        console.log("Pause button clicked");
+
+        if (mediaRecorder.state === "recording") {
+            stopRecording();
+        }
+    }
+
+    // Play recorded audio
+    function playRecording() {
+        console.log("Play button clicked");
+        audioPlayback.play();
+    }
+
+    // Re-record audio
     function reRecord() {
         console.log("Re-record button clicked");
 
-        rec.clear();
+        audioChunks = [];
         startRecording();
     }
 
+    // Create download link for the recorded audio
     function createDownloadLink(blob) {
         const url = URL.createObjectURL(blob);
         audioPlayback.src = url;

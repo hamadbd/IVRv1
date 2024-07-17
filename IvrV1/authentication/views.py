@@ -67,17 +67,25 @@ class RecordingPage(View):
         if not user_id:
             return HttpResponse("User not authenticated", status=401)
 
-        user = User.objects.get(id=user_id)
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            logger.error("User not found in the database")
+            return HttpResponse("User not found", status=404)
 
-        audio_data = request.POST['audio_file']
-        format, audio_str = audio_data.split(';base64,')
-        ext = format.split('/')[-1]
-        audio_file = ContentFile(base64.b64decode(audio_str), name=f'recording.{ext}')
+        try:
+            audio_data = request.POST['audio_file']
+            format, audio_str = audio_data.split(';base64,')
+            ext = format.split('/')[-1]
+            audio_file = ContentFile(base64.b64decode(audio_str), name=f'recording.{ext}')
 
-        recording = Recording(user=user, audio_file=audio_file)
-        recording.save()
+            recording = Recording(user=user, audio_file=audio_file)
+            recording.save()
 
-        return redirect('success_page')
+            return redirect('success_page')
+        except Exception as e:
+            logger.error(f"Error saving recording: {e}")
+            return HttpResponse("An error occurred during file upload", status=500)
 
 class SuccessPage(View):
     def get(self, request):
