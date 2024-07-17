@@ -28,11 +28,14 @@ This Voice Recording Application allows users to record audio, play it back, and
 
 ## Application Features
 
-1. **User Authentication**: Users can register and authenticate themselves.
-2. **Audio Recording**: Users can record their voice, with the ability to pause and re-record.
-3. **Audio Playback**: Users can play back their recorded audio.
-4. **Database Storage**: Recorded audio files are saved to a PostgreSQL database.
-5. **Error Handling**: Comprehensive error handling for a smooth user experience.
+1. **User Registration**: Users can register with their Date of Birth (DOB) and Date of Arrival (DOA).
+2. **User Authentication**: Users can authenticate themselves using their ID, DOB, and DOA.
+3. **Login**: Users created by the admin can log in using their username and password.
+4. **Audio Recording**: Users can record their voice, with the ability to pause and re-record.
+5. **Audio Playback**: Users can play back their recorded audio.
+6. **Database Storage**: Recorded audio files are saved to a PostgreSQL database.
+7. **Error Handling**: Comprehensive error handling for a smooth user experience.
+8. **Viewing Recordings**: Authenticated users can view and play all saved recordings with their creation date.
 
 ## Detailed Implementation
 
@@ -58,17 +61,23 @@ We implemented Django views to handle the recording, playback, and saving of aud
    - Users register by providing necessary details.
    - Users authenticate themselves to access the recording functionality.
 
-2. **Audio Recording**:
+2. **Login**:
+   - Users log in using the credentials created by the admin.
+
+3. **Audio Recording**:
    - Users can start recording by pressing the record button.
    - Recording can be paused by pressing the pause button.
    - Users can play back the recorded audio by pressing the play button.
    - Users can re-record the audio by pressing the re-record button.
 
-3. **Saving the Recording**:
+4. **Saving the Recording**:
    - Once satisfied with the recording, users can save it to the database.
    - The audio file is associated with the user who created it.
 
-4. **Playback**:
+5. **Viewing Recordings**:
+   - Authenticated users can view all saved recordings in a table with their creation date and other details.
+
+6. **Playback**:
    - Users can play back the recorded audio from the database.
 
 ## Future Enhancements
