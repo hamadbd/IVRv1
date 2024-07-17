@@ -13,6 +13,10 @@ IvrV1 is a Django-based web application that provides user authentication and vo
 - Server-side validation of user input
 - PostgreSQL database for storing user and recording data
 - Basic logging and error handling
+- Login functionality for users created by the admin
+- Viewing and playing saved recordings in a table
+
+
 
 ## Project Structure
 
@@ -50,12 +54,15 @@ IvrV1/
 ├── templates/
 │ ├── base.html
 │ ├── register.html
-│ ├── authenticate.html
+│ ├── ivr_call.html
 │ ├── authenticated_page.html
-│ └── home.html
+│ ├── login.html
+│ ├── home.html
+│ ├── recording_list.html
 │
 ├── manage.py
 └── debug.log
+
 
 
 ## Setup Instructions
@@ -130,16 +137,14 @@ IvrV1/
 ## Usage
 
 - **Homepage**: `http://127.0.0.1:8000/`
-- **Registration Form**: `http://127.0.0.1:8000/auth/register/`
-- **Authentication Form**: `http://127.0.0.1:8000/auth/authenticate/`
+- **Registration Form**: `http://127.0.0.1:8000/register/`
+- **IVR Call Form**: `http://127.0.0.1:8000/ivr_call/`
+- **Login Form**: `http://127.0.0.1:8000/login/`
+- **Recorded Audios**: `http://127.0.0.1:8000/recordings/`
 
 ## Logging
 
 The application uses basic logging to record debug information. Logs are saved to `debug.log` in the project root directory.
-
-## Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request.
 
 ## License
 
