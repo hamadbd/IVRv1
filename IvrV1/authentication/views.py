@@ -6,6 +6,8 @@ from django.core.files.base import ContentFile
 from django.http import HttpResponse
 import logging
 import base64
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm
 logger = logging.getLogger(__name__)
 
 class RegisterView(View):
@@ -25,10 +27,26 @@ class RegisterView(View):
         return render(request, 'register.html', {'form': form})
 
 
+class LoginView(View):
+    def get(self, request):
+        form = AuthenticationForm()
+        return render(request, 'login.html', {'form': form})
+
+    def post(self, request):
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('recording_list')
+        return render(request, 'login.html', {'form': form})
+
 class AuthenticateView(View):
     def get(self, request):
         form = AuthenticateForm()
-        return render(request, 'authenticate.html', {'form': form})
+        return render(request, 'ivr_call.html', {'form': form})
 
     def post(self, request):
         form = AuthenticateForm(request.POST)
@@ -37,22 +55,13 @@ class AuthenticateView(View):
             dob = form.cleaned_data['dob']
             doa = form.cleaned_data['doa']
 
-            logger.debug(f"Authenticating user: {id}, DOB: {dob}, DOA: {doa}")
-
             try:
                 user = User.objects.get(id=id, dob=dob, doa=doa)
                 request.session['user_id'] = user.id
-                logger.debug(f"User found: {user.id}")
                 return redirect('recording_page')
             except User.DoesNotExist:
-                logger.debug("User does not exist")
-                form.add_error(None, 'User does not exist')
-            except Exception as e:
-                logger.error(f"Error during authentication: {e}")
-                form.add_error(None, 'An error occurred during authentication. Please try again.')
-
-        logger.debug("Form is invalid")
-        return render(request, 'authenticate.html', {'form': form})
+                form.add_error(None, 'Invalid credentials')
+        return render(request, 'ivr_call.html', {'form': form})
 
 
 
@@ -90,5 +99,18 @@ class RecordingPage(View):
 class SuccessPage(View):
     def get(self, request):
         return HttpResponse("Recording successfully uploaded!")
+
+
+
+class RecordingListView(View):
+    def get(self, request):
+        recordings = Recording.objects.all()
+        return render(request, 'recording_list.html', {'recordings': recordings})
+
+
+
+class HomePageView(View):
+    def get(self, request):
+        return render(request, 'home.html')
 
 
