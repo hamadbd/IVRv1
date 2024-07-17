@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Recording Page</h2>
+<p>Welcome! You can record your voice here.</p>
+
+<div id="controls">
+    <button id="recordButton"><img src="{% static 'mic.png' %}" alt="Record"></button>
+    <button id="pauseButton" disabled><img src="{% static 'pause.png' %}" alt="Pause"></button>
+    <button id="reRecordButton" disabled><img src="{% static 're-record.png' %}" alt="Re-record"></button>
+</div>
+
+<audio id="audioPlayback" controls></audio>
+
+<form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_recording' %}">
+    {% csrf_token %}
+    <input type="hidden" name="audio_file" id="audioFileInput">
+    <button type="submit">Save Recording</button>
+</form>
+
+<!-- Include Recorder.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recorder.js/4.14.2/recorder.min.js"></script>
+<script>
+    let gumStream; // Stream from getUserMedia()
+    let rec; // Recorder.js object
+    let input; // MediaStreamAudioSourceNode we'll be recording
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioContext; // Audio context to help us record
+
+    const recordButton = document.getElementById("recordButton");
+    const pauseButton = document.getElementById("pauseButton");
+    const reRecordButton = document.getElementById("reRecordButton");
+    const audioPlayback = document.getElementById("audioPlayback");
+    const audioFileInput = document.getElementById("audioFileInput");
+
+    recordButton.addEventListener("click", startRecording);
+    pauseButton.addEventListener("click", pauseRecording);
+    reRecordButton.addEventListener("click", reRecord);
+
+    function startRecording() {
+        console.log("Record button clicked");
+
+        const constraints = { audio: true, video: false };
+
+        recordButton.disabled = true;
+        pauseButton.disabled = false;
+        reRecordButton.disabled = false;
+
+        navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+            audioContext = new AudioContext();
+            gumStream = stream;
+            input = audioContext.createMediaStreamSource(stream);
+
+            rec = new Recorder(input, { numChannels: 1 });
+            rec.record();
+
+            console.log("Recording started");
+        }).catch(function(err) {
+            console.error("Error accessing audio stream:", err);
+            recordButton.disabled = false;
+            pauseButton.disabled = true;
+            reRecordButton.disabled = true;
+        });
+    }
+
+    function pauseRecording() {
+        console.log("Pause button clicked");
+
+        if (rec.recording) {
+            rec.stop();
+            gumStream.getAudioTracks()[0].stop();
+            rec.exportWAV(createDownloadLink);
+
+            console.log("Recording paused");
+        } else {
+            rec.record();
+            console.log("Recording resumed");
+        }
+    }
+
+    function reRecord() {
+        console.log("Re-record button clicked");
+
+        rec.clear();
+        startRecording();
+    }
+
+    function createDownloadLink(blob) {
+        const url = URL.createObjectURL(blob);
+        audioPlayback.src = url;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = function() {
+            audioFileInput.value = reader.result;
+        };
+    }
+</script>
+{% endblock %}
